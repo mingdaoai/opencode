@@ -326,16 +326,6 @@ function App(props: { onSnapshot?: () => Promise<string[]> }) {
   onMount(() => {
     batch(() => {
       if (args.agent) local.agent.set(args.agent)
-      if (args.model) {
-        const { providerID, modelID } = Provider.parseModel(args.model)
-        if (!providerID || !modelID)
-          return toast.show({
-            variant: "warning",
-            message: `Invalid model format: ${args.model}`,
-            duration: 3000,
-          })
-        local.model.set({ providerID, modelID }, { recent: true })
-      }
       if (args.sessionID && !args.fork) {
         route.navigate({
           type: "session",
@@ -343,6 +333,23 @@ function App(props: { onSnapshot?: () => Promise<string[]> }) {
         })
       }
     })
+  })
+
+  const [modelSet, setModelSet] = createSignal(false)
+  createEffect(() => {
+    if (modelSet() || !args.model || sync.status === "loading") return
+    const { providerID, modelID } = Provider.parseModel(args.model)
+    if (!providerID || !modelID) {
+      toast.show({
+        variant: "warning",
+        message: `Invalid model format: ${args.model}`,
+        duration: 3000,
+      })
+      setModelSet(true) // prevent repeated attempts
+      return
+    }
+    local.model.set({ providerID, modelID }, { recent: true })
+    setModelSet(true)
   })
 
   let continued = false

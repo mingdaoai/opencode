@@ -29,6 +29,8 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
     const toast = useToast()
 
     function isModelValid(model: { providerID: string; modelID: string }) {
+      // If providers are still loading, assume valid (will be revalidated later)
+      if (sync.status === "loading") return true
       const provider = sync.data.provider.find((x) => x.id === model.providerID)
       return !!provider?.models[model.modelID]
     }
