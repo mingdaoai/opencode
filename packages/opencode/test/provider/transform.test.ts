@@ -977,6 +977,104 @@ describe("ProviderTransform.message - DeepSeek reasoning content", () => {
     ])
     expect(result[0].providerOptions?.openaiCompatible?.reasoning_content).toBeUndefined()
   })
+
+  test("DeepSeek on @ai-sdk/openai-compatible without interleaved capability still rounds reasoning_content", () => {
+    const msgs = [
+      {
+        role: "assistant",
+        content: [
+          { type: "reasoning", text: "thinking..." },
+          { type: "text", text: "answer" },
+        ],
+      },
+    ] as any[]
+
+    const result = ProviderTransform.message(
+      msgs,
+      {
+        id: ModelID.make("deepseek/deepseek-v4-pro"),
+        providerID: ProviderID.make("deepseek"),
+        api: {
+          id: "deepseek-v4-pro",
+          url: "https://api.deepseek.com",
+          npm: "@ai-sdk/openai-compatible",
+        },
+        name: "DeepSeek V4 Pro",
+        capabilities: {
+          temperature: true,
+          reasoning: true,
+          attachment: false,
+          toolcall: true,
+          input: { text: true, audio: false, image: false, video: false, pdf: false },
+          output: { text: true, audio: false, image: false, video: false, pdf: false },
+          interleaved: false,
+        },
+        cost: {
+          input: 0.001,
+          output: 0.002,
+          cache: { read: 0.0001, write: 0.0002 },
+        },
+        limit: { context: 128000, output: 8192 },
+        status: "active",
+        options: {},
+        headers: {},
+        release_date: "2026-01-01",
+      },
+      {},
+    )
+
+    expect(result[0].content).toEqual([{ type: "text", text: "answer" }])
+    expect(result[0].providerOptions?.openaiCompatible?.reasoning_content).toBe("thinking...")
+  })
+
+  test("DeepSeek omits reasoning_content when reasoning text is empty", () => {
+    const msgs = [
+      {
+        role: "assistant",
+        content: [
+          { type: "reasoning", text: "" },
+          { type: "text", text: "answer" },
+        ],
+      },
+    ] as any[]
+
+    const result = ProviderTransform.message(
+      msgs,
+      {
+        id: ModelID.make("deepseek/deepseek-reasoner"),
+        providerID: ProviderID.make("deepseek"),
+        api: {
+          id: "deepseek-reasoner",
+          url: "https://api.deepseek.com",
+          npm: "@ai-sdk/openai-compatible",
+        },
+        name: "DeepSeek Reasoner",
+        capabilities: {
+          temperature: true,
+          reasoning: true,
+          attachment: false,
+          toolcall: true,
+          input: { text: true, audio: false, image: false, video: false, pdf: false },
+          output: { text: true, audio: false, image: false, video: false, pdf: false },
+          interleaved: { field: "reasoning_content" },
+        },
+        cost: {
+          input: 0.001,
+          output: 0.002,
+          cache: { read: 0.0001, write: 0.0002 },
+        },
+        limit: { context: 128000, output: 8192 },
+        status: "active",
+        options: {},
+        headers: {},
+        release_date: "2025-01-20",
+      },
+      {},
+    )
+
+    expect(result[0].content).toEqual([{ type: "text", text: "answer" }])
+    expect(result[0].providerOptions?.openaiCompatible?.reasoning_content).toBeUndefined()
+  })
 })
 
 describe("ProviderTransform.message - empty image handling", () => {
