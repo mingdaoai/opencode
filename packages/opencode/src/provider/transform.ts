@@ -196,30 +196,20 @@ function normalizeMessages(
     return result
   }
 
-  // Deepseek requires all assistant messages to have reasoning on them
-  if (model.api.id.toLowerCase().includes("deepseek")) {
-    msgs = msgs.map((msg) => {
-      if (msg.role !== "assistant") return msg
-      if (Array.isArray(msg.content)) {
-        if (msg.content.some((part) => part.type === "reasoning")) return msg
-        return { ...msg, content: [...msg.content, { type: "reasoning", text: "" }] }
-      }
-      return {
-        ...msg,
-        content: [
-          ...(msg.content ? [{ type: "text" as const, text: msg.content }] : []),
-          { type: "reasoning" as const, text: "" },
-        ],
-      }
-    })
-  }
-
-  if (
+  // DeepSeek thinking mode on @ai-sdk/openai-compatible requires the prior turn's
+  // reasoning_content to be echoed back on subsequent requests, even when the model's
+  // capabilities.interleaved is unset. Force the field here so the round-trip below runs.
+  const interleavedField =
     typeof model.capabilities.interleaved === "object" &&
     model.capabilities.interleaved.field &&
     model.api.npm !== "@openrouter/ai-sdk-provider"
-  ) {
-    const field = model.capabilities.interleaved.field
+      ? model.capabilities.interleaved.field
+      : model.api.npm === "@ai-sdk/openai-compatible" && model.api.id.toLowerCase().includes("deepseek")
+        ? "reasoning_content"
+        : null
+
+  if (interleavedField) {
+    const field = interleavedField
     return msgs.map((msg) => {
       if (msg.role === "assistant" && Array.isArray(msg.content)) {
         const reasoningParts = msg.content.filter((part: any) => part.type === "reasoning")
@@ -228,9 +218,13 @@ function normalizeMessages(
         // Filter out reasoning parts from content
         const filteredContent = msg.content.filter((part: any) => part.type !== "reasoning")
 
-        // Include reasoning_content | reasoning_details directly on the message for all assistant messages.
-        // Always set the field even when empty — some providers (e.g. DeepSeek) may return empty
-        // reasoning_content which still needs to be sent back in subsequent requests.
+        // Only round-trip the field when we actually have reasoning text. Sending an empty
+        // string can trip DeepSeek's "reasoning_content in thinking mode must be passed back"
+        // check, since the API treats the field as present-but-invalid.
+        if (reasoningText.length === 0) {
+          return { ...msg, content: filteredContent }
+        }
+
         return {
           ...msg,
           content: filteredContent,
