@@ -401,6 +401,7 @@ const live: Layer.Layer<
                   // against the exact wire payload, including reasoning content
                   // (in `prompt[].content` reasoning parts) and any reasoning_content
                   // round-tripped under `prompt[].providerOptions.openaiCompatible`.
+                  // See DEEPSEEK_REASONING.md at the repo root for the grep recipe.
                   l.info("provider request", {
                     providerID: input.model.providerID,
                     modelID: input.model.api.id,

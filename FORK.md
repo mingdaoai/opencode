@@ -70,3 +70,10 @@ gh pr create --repo anomalyco/opencode --base dev
 
 Never push to `upstream` — you don't have rights there, and the workflow above
 doesn't need it.
+
+## Fork-specific debugging notes
+
+- [DEEPSEEK_REASONING.md](DEEPSEEK_REASONING.md) — `reasoning_content` rules
+  for `deepseek-reasoner` vs DeepSeek V4 thinking mode (e.g. `deepseek-v4-pro`),
+  where the fix lives, and how to read the `provider request` log when it
+  breaks again.

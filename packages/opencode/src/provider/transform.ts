@@ -203,6 +203,7 @@ function normalizeMessages(
   // Scoped narrowly to the public deepseek-reasoner endpoint; other "deepseek-*"
   // variants (e.g. deepseek-v4-pro thinking mode on third-party hosts) have the
   // opposite requirement and are handled by the interleaved round-trip.
+  // See DEEPSEEK_REASONING.md at the repo root for the full debugging guide.
   if (model.providerID === "deepseek" && model.api.id === "deepseek-reasoner") {
     return msgs.map((msg) => {
       if (msg.role !== "assistant" || !Array.isArray(msg.content)) return msg
