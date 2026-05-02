@@ -397,6 +397,13 @@ const live: Layer.Layer<
                 if (args.type === "stream") {
                   // @ts-expect-error
                   args.params.prompt = ProviderTransform.message(args.params.prompt, input.model, options)
+                  if (input.model.api.id.toLowerCase().includes("deepseek")) {
+                    l.info("deepseek request", {
+                      modelID: input.model.api.id,
+                      messageCount: args.params.prompt.length,
+                      prompt: args.params.prompt,
+                    })
+                  }
                 }
                 return args.params
               },
