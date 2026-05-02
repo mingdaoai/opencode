@@ -196,9 +196,25 @@ function normalizeMessages(
     return result
   }
 
-  // DeepSeek thinking mode on @ai-sdk/openai-compatible requires the prior turn's
-  // reasoning_content to be echoed back on subsequent requests, even when the model's
-  // capabilities.interleaved is unset. Force the field here so the round-trip below runs.
+  // DeepSeek's public docs (https://api-docs.deepseek.com/guides/reasoning_model)
+  // explicitly require stripping reasoning_content from prior assistant turns —
+  // including it returns 400. Strip reasoning parts from content so the AI SDK
+  // does not auto-emit reasoning_content from them, and skip the round-trip below.
+  // Scoped narrowly to the public deepseek-reasoner endpoint; other "deepseek-*"
+  // variants (e.g. deepseek-v4-pro thinking mode on third-party hosts) have the
+  // opposite requirement and are handled by the interleaved round-trip.
+  if (model.providerID === "deepseek" && model.api.id === "deepseek-reasoner") {
+    return msgs.map((msg) => {
+      if (msg.role !== "assistant" || !Array.isArray(msg.content)) return msg
+      return { ...msg, content: msg.content.filter((part: any) => part.type !== "reasoning") }
+    })
+  }
+
+  // DeepSeek thinking-mode variants other than the public deepseek-reasoner (e.g.
+  // deepseek-v4-pro) require the prior turn's reasoning_content to be echoed back
+  // on subsequent requests, even when the model's capabilities.interleaved is
+  // unset and even when the reasoning text is empty. Force the field here so the
+  // round-trip below runs and emits reasoning_content unconditionally.
   const interleavedField =
     typeof model.capabilities.interleaved === "object" &&
     model.capabilities.interleaved.field &&
@@ -218,13 +234,9 @@ function normalizeMessages(
         // Filter out reasoning parts from content
         const filteredContent = msg.content.filter((part: any) => part.type !== "reasoning")
 
-        // Only round-trip the field when we actually have reasoning text. Sending an empty
-        // string can trip DeepSeek's "reasoning_content in thinking mode must be passed back"
-        // check, since the API treats the field as present-but-invalid.
-        if (reasoningText.length === 0) {
-          return { ...msg, content: filteredContent }
-        }
-
+        // Always set the field — including when empty. DeepSeek V4 thinking mode
+        // rejects requests that drop reasoning_content with "The reasoning_content
+        // in the thinking mode must be passed back to the API."
         return {
           ...msg,
           content: filteredContent,

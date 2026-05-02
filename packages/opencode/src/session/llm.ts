@@ -397,13 +397,17 @@ const live: Layer.Layer<
                 if (args.type === "stream") {
                   // @ts-expect-error
                   args.params.prompt = ProviderTransform.message(args.params.prompt, input.model, options)
-                  if (input.model.api.id.toLowerCase().includes("deepseek")) {
-                    l.info("deepseek request", {
-                      modelID: input.model.api.id,
-                      messageCount: args.params.prompt.length,
-                      prompt: args.params.prompt,
-                    })
-                  }
+                  // Log the post-transform call so future API errors can be diffed
+                  // against the exact wire payload, including reasoning content
+                  // (in `prompt[].content` reasoning parts) and any reasoning_content
+                  // round-tripped under `prompt[].providerOptions.openaiCompatible`.
+                  l.info("provider request", {
+                    providerID: input.model.providerID,
+                    modelID: input.model.api.id,
+                    npm: input.model.api.npm,
+                    messageCount: args.params.prompt.length,
+                    prompt: args.params.prompt,
+                  })
                 }
                 return args.params
               },
