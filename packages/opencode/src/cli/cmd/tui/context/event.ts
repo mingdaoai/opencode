@@ -12,6 +12,16 @@ export function useEvent() {
         return
       }
 
+      // ToastShow events are user-visible notifications that
+      // should always render, regardless of which directory or
+      // workspace triggered them. Without this bypass they are
+      // silently dropped when the event envelope lacks a matching
+      // directory scope (e.g., server-side plugin toasts).
+      if (event.payload.type === "tui.toast.show") {
+        handler(event.payload)
+        return
+      }
+
       // Special hack for truly global events
       if (event.directory === "global") {
         handler(event.payload)

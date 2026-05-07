@@ -306,6 +306,7 @@ export const TuiRoutes = lazy(() =>
       }),
       validator("json", zodObject(TuiEvent.ToastShow.properties)),
       async (c) => {
+        require("node:fs").appendFileSync("/tmp/opencode-toast.log", `${new Date().toISOString()} HONO showToast: ${JSON.stringify(c.req.valid("json"))}\n`)
         await Bus.publish(
           TuiEvent.ToastShow,
           c.req.valid("json") as Schema.Schema.Type<typeof TuiEvent.ToastShow.properties>,

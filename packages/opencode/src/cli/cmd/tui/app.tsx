@@ -56,7 +56,10 @@ import { TuiEvent } from "./event"
 import { KVProvider, useKV } from "./context/kv"
 import { Provider } from "@/provider/provider"
 import { ArgsProvider, useArgs, type Args } from "./context/args"
+import * as Log from "@opencode-ai/core/util/log"
 import open from "open"
+
+const tuiAppLog = Log.create({ service: "tui.app" })
 import { PromptRefProvider, usePromptRef } from "./context/prompt"
 import { TuiConfigProvider, useTuiConfig } from "./context/tui-config"
 import { TuiConfig } from "@/cli/cmd/tui/config/tui"
@@ -353,7 +356,13 @@ function App(props: { onSnapshot?: () => Promise<string[]> }) {
   createEffect(() => {
     if (modelSet() || !args.model || sync.status === "loading") return
     const { providerID, modelID } = Provider.parseModel(args.model)
+    tuiAppLog.info("args.model effect firing", {
+      argsModel: args.model,
+      providerID,
+      modelID,
+    })
     if (!providerID || !modelID) {
+      tuiAppLog.info("args.model rejected", { reason: "invalid_format", argsModel: args.model })
       toast.show({
         variant: "warning",
         message: `Invalid model format: ${args.model}`,

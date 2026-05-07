@@ -195,6 +195,14 @@ export const layer = Layer.effect(
         ? yield* provider.getModel(ag.model.providerID, ag.model.modelID)
         : ((yield* provider.getSmallModel(input.providerID)) ??
           (yield* provider.getModel(input.providerID, input.modelID)))
+      log.info("model selected", {
+        sessionID: input.session.id,
+        agent: "title",
+        providerID: mdl.providerID,
+        modelID: mdl.id,
+        reason: ag.model ? "title_agent.model" : "small_model_or_user_model",
+        path: "title",
+      })
       const msgs = onlySubtasks
         ? [{ role: "user" as const, content: subtasks.map((p) => p.prompt).join("\n") }]
         : yield* MessageV2.toModelMessagesEffect(context, mdl)
@@ -757,6 +765,14 @@ NOTE: At any point in time through this workflow you should feel free to ask the
               throw error
             }
             const model = input.model ?? agent.model ?? (yield* lastModel(input.sessionID))
+            log.info("model selected", {
+              sessionID: input.sessionID,
+              agent: agent.name,
+              providerID: model.providerID,
+              modelID: model.modelID,
+              reason: input.model ? "input.model" : agent.model ? "agent.model" : "last_model",
+              path: "tool_result",
+            })
             const userMsg: MessageV2.User = {
               id: input.messageID ?? MessageID.ascending(),
               sessionID: input.sessionID,
@@ -932,6 +948,13 @@ NOTE: At any point in time through this workflow you should feel free to ask the
       }
 
       const model = input.model ?? ag.model ?? (yield* lastModel(input.sessionID))
+      log.info("model selected", {
+        sessionID: input.sessionID,
+        agent: ag.name,
+        providerID: model.providerID,
+        modelID: model.modelID,
+        reason: input.model ? "input.model" : ag.model ? "agent.model" : "last_model",
+      })
       const same = ag.model && model.providerID === ag.model.providerID && model.modelID === ag.model.modelID
       const full =
         !input.variant && ag.variant && same

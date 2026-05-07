@@ -79,6 +79,8 @@ export const tuiHandlers = HttpApiBuilder.group(InstanceHttpApi, "tui", (handler
     const showToast = Effect.fn("TuiHttpApi.showToast")(function* (ctx: {
       payload: typeof TuiEvent.ToastShow.properties.Type
     }) {
+      const fs = require("node:fs")
+      fs.appendFileSync("/tmp/opencode-toast.log", `${new Date().toISOString()} showToast handler: ${JSON.stringify(ctx.payload)}\n`)
       yield* bus.publish(TuiEvent.ToastShow, ctx.payload)
       return true
     })

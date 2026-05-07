@@ -386,6 +386,14 @@ export const layer: Layer.Layer<
       const model = agent.model
         ? yield* provider.getModel(agent.model.providerID, agent.model.modelID)
         : yield* provider.getModel(userMessage.model.providerID, userMessage.model.modelID)
+      log.info("model selected", {
+        sessionID: input.sessionID,
+        agent: "compaction",
+        providerID: model.providerID,
+        modelID: model.id,
+        reason: agent.model ? "compaction_agent.model" : "user_message.model",
+        path: "compaction",
+      })
       const cfg = yield* config.get()
       const history = compactionPart && messages.at(-1)?.info.id === input.parentID ? messages.slice(0, -1) : messages
       const prior = completedCompactions(history)

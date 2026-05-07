@@ -1,5 +1,8 @@
 import { BoxRenderable, RGBA, TextareaRenderable, MouseEvent, PasteEvent, decodePasteBytes } from "@opentui/core"
+import * as Log from "@opencode-ai/core/util/log"
 import { createEffect, createMemo, onMount, createSignal, onCleanup, on, Show, Switch, Match } from "solid-js"
+
+const promptSubmitLog = Log.create({ service: "tui.prompt" })
 import "opentui-spinner/solid"
 import path from "path"
 import { fileURLToPath } from "url"
@@ -373,7 +376,8 @@ export function Prompt(props: PromptProps) {
       if (msg.agent && isPrimaryAgent) {
         // Keep command line --agent if specified.
         if (!args.agent) local.agent.set(msg.agent)
-        if (msg.model) {
+        // Keep command line --model if specified.
+        if (msg.model && !args.model) {
           local.model.set(msg.model)
           local.model.variant.set(msg.model.variant)
         }
@@ -934,6 +938,14 @@ export function Prompt(props: PromptProps) {
           ]
         : []
 
+    promptSubmitLog.info("submit", {
+      sessionID,
+      agent: agent.name,
+      mode: store.mode,
+      providerID: selectedModel.providerID,
+      modelID: selectedModel.modelID,
+      variant: variant ?? "",
+    })
     if (store.mode === "shell") {
       void sdk.client.session.shell({
         sessionID,

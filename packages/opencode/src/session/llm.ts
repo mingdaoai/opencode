@@ -86,6 +86,14 @@ const live: Layer.Layer<
         modelID: input.model.id,
         providerID: input.model.providerID,
       })
+      l.info("model selected", {
+        modelID: input.model.id,
+        providerID: input.model.providerID,
+        small: input.small ?? false,
+        agent: input.agent.name,
+        mode: input.agent.mode,
+        stack: new Error().stack?.split("\n").slice(1, 12).join(" | "),
+      })
 
       const [language, cfg, item, info] = yield* Effect.all(
         [

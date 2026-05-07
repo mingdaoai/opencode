@@ -12,6 +12,9 @@ import { useArgs } from "./args"
 import { useSDK } from "./sdk"
 import { RGBA } from "@opentui/core"
 import { Filesystem } from "@/util/filesystem"
+import * as Log from "@opencode-ai/core/util/log"
+
+const log = Log.create({ service: "tui.local" })
 
 export function parseModel(model: string) {
   const [providerID, ...rest] = model.split("/")
@@ -30,9 +33,26 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
 
     function isModelValid(model: { providerID: string; modelID: string }) {
       // If providers are still loading, assume valid (will be revalidated later)
-      if (sync.status === "loading") return true
+      if (sync.status === "loading") {
+        log.info("isModelValid", {
+          providerID: model.providerID,
+          modelID: model.modelID,
+          result: true,
+          reason: "sync.loading",
+        })
+        return true
+      }
       const provider = sync.data.provider.find((x) => x.id === model.providerID)
-      return !!provider?.models[model.modelID]
+      const valid = !!provider?.models[model.modelID]
+      log.info("isModelValid", {
+        providerID: model.providerID,
+        modelID: model.modelID,
+        result: valid,
+        providerFound: !!provider,
+        modelCount: provider ? Object.keys(provider.models).length : 0,
+        sampleModelIDs: provider ? Object.keys(provider.models).slice(0, 5).join(",") : "",
+      })
+      return valid
     }
 
     function getFirstValidModel(...modelFns: (() => { providerID: string; modelID: string } | undefined)[]) {
@@ -201,13 +221,27 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
 
       const currentModel = createMemo(() => {
         const a = agent.current()
-        return (
-          getFirstValidModel(
-            () => a && modelStore.model[a.name],
-            () => a && a.model,
-            fallbackModel,
-          ) ?? undefined
+        const perAgentOverride = a && modelStore.model[a.name]
+        const agentDefault = a && a.model
+        const fb = fallbackModel()
+        const result = getFirstValidModel(
+          () => perAgentOverride,
+          () => agentDefault,
+          () => fb,
         )
+        let reason = "none"
+        if (result && perAgentOverride && result.providerID === perAgentOverride.providerID && result.modelID === perAgentOverride.modelID) reason = "per_agent_override"
+        else if (result && agentDefault && result.providerID === agentDefault.providerID && result.modelID === agentDefault.modelID) reason = "agent_default"
+        else if (result && fb && result.providerID === fb.providerID && result.modelID === fb.modelID) reason = "fallback"
+        log.info("currentModel resolved", {
+          agent: a?.name ?? "(none)",
+          perAgentOverride: perAgentOverride ? `${perAgentOverride.providerID}/${perAgentOverride.modelID}` : "",
+          agentDefault: agentDefault ? `${agentDefault.providerID}/${agentDefault.modelID}` : "",
+          fallback: fb ? `${fb.providerID}/${fb.modelID}` : "",
+          resolved: result ? `${result.providerID}/${result.modelID}` : "(none)",
+          reason,
+        })
+        return result ?? undefined
       })
 
       return {
@@ -291,6 +325,11 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
         set(model: { providerID: string; modelID: string }, options?: { recent?: boolean }) {
           batch(() => {
             if (!isModelValid(model)) {
+              log.info("model.set rejected", {
+                providerID: model.providerID,
+                modelID: model.modelID,
+                reason: "isModelValid_false",
+              })
               toast.show({
                 message: `Model ${model.providerID}/${model.modelID} is not valid`,
                 variant: "warning",
@@ -299,7 +338,20 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
               return
             }
             const a = agent.current()
-            if (!a) return
+            if (!a) {
+              log.info("model.set rejected", {
+                providerID: model.providerID,
+                modelID: model.modelID,
+                reason: "no_current_agent",
+              })
+              return
+            }
+            log.info("model.set accepted", {
+              providerID: model.providerID,
+              modelID: model.modelID,
+              agent: a.name,
+              recent: !!options?.recent,
+            })
             setModelStore("model", a.name, model)
             if (options?.recent) {
               const uniq = uniqueBy([model, ...modelStore.recent], (x) => `${x.providerID}/${x.modelID}`)
@@ -399,15 +451,34 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
       },
     }
 
+// Automatically update model when agent changes
+    const argsForModelGuard = useArgs()
     createEffect(() => {
       const value = agent.current()
-      if (!value?.model) return
-      if (isModelValid(value.model)) return
-      toast.show({
-        variant: "warning",
-        message: `Agent ${value.name}'s configured model ${value.model.providerID}/${value.model.modelID} is not valid`,
-        duration: 3000,
-      })
+      if (!value) return
+      // Keep command line --model if specified.
+      if (argsForModelGuard.model) {
+        log.info("agent-change auto-model skipped", {
+          agent: value.name,
+          reason: "args.model_set",
+          argsModel: argsForModelGuard.model,
+        })
+        return
+      }
+      if (value.model) {
+        if (isModelValid(value.model))
+          model.set({
+            providerID: value.model.providerID,
+            modelID: value.model.modelID,
+          })
+        else
+          toast.show({
+            variant: "warning",
+            message: `Agent ${value.name}'s configured model ${value.model.providerID}/${value.model.modelID} is not valid`,
+            duration: 3000,
+          })
+      }
+    })
     })
 
     const result = {
