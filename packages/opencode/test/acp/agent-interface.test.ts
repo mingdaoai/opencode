@@ -36,8 +36,8 @@ describe("acp.agent interface compliance", () => {
     "authenticate",
     // Capability-gated methods checked by the SDK router
     "listSessions",
-    "resumeSession",
-    "closeSession",
+    "unstable_resumeSession",
+    "unstable_closeSession",
     "unstable_forkSession",
     "unstable_setSessionModel",
   ]

@@ -479,9 +479,8 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
           })
       }
     })
-    })
 
-    const result = {
+const result = {
       model,
       agent,
       mcp,
