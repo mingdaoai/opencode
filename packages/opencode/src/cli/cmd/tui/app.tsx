@@ -183,7 +183,7 @@ export function tui(input: {
                                             <PromptHistoryProvider>
                                               <PromptRefProvider>
                                                 <EditorContextProvider>
-                                                  <App onSnapshot={input.onSnapshot} />
+                                                  <App onSnapshot={input.onSnapshot} directory={input.directory} />
                                                 </EditorContextProvider>
                                               </PromptRefProvider>
                                             </PromptHistoryProvider>
@@ -210,7 +210,7 @@ export function tui(input: {
   })
 }
 
-function App(props: { onSnapshot?: () => Promise<string[]> }) {
+function App(props: { onSnapshot?: () => Promise<string[]>; directory?: string }) {
   const tuiConfig = useTuiConfig()
   const route = useRoute()
   const dimensions = useTerminalDimensions()
@@ -313,30 +313,16 @@ function App(props: { onSnapshot?: () => Promise<string[]> }) {
     kv.get("paste_summary_enabled", !sync.data.config.experimental?.disable_paste_summary),
   )
 
-  // Update terminal window title based on current route and session
+  // Update terminal window title to show cwd + opencode
   createEffect(() => {
     if (!terminalTitleEnabled() || Flag.OPENCODE_DISABLE_TERMINAL_TITLE) return
-
-    if (route.data.type === "home") {
-      renderer.setTerminalTitle("OpenCode")
-      return
+    const dir = props.directory ?? ""
+    const home = process.env.HOME ?? ""
+    let displayDir = dir
+    if (home && dir.startsWith(home)) {
+      displayDir = "~" + dir.slice(home.length)
     }
-
-    if (route.data.type === "session") {
-      const session = sync.session.get(route.data.sessionID)
-      if (!session || SessionApi.isDefaultTitle(session.title)) {
-        renderer.setTerminalTitle("OpenCode")
-        return
-      }
-
-      const title = session.title.length > 40 ? session.title.slice(0, 37) + "..." : session.title
-      renderer.setTerminalTitle(`OC | ${title}`)
-      return
-    }
-
-    if (route.data.type === "plugin") {
-      renderer.setTerminalTitle(`OC | ${route.data.id}`)
-    }
+    renderer.setTerminalTitle(displayDir ? `${displayDir} opencode` : "opencode")
   })
 
   const args = useArgs()
