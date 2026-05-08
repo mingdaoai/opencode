@@ -98,6 +98,19 @@ const table = sqliteTable("session", {
 - Test actual implementation, do not duplicate logic into tests
 - Tests cannot run from repo root (guard: `do-not-run-tests-from-root`); run from package dirs like `packages/opencode`.
 
+## Build
+
+- Prereq: Bun 1.3+, run `bun install` from repo root first.
+- To build the standalone opencode binary for the current platform:
+  ```bash
+  bun run build -- --single            # from packages/opencode
+  # or
+  ./packages/opencode/script/build.ts --single   # from repo root
+  ```
+- Build flags: `--single` (current platform), `--baseline` (also build non-AVX2 variant), `--skip-embed-web-ui`, `--sourcemaps`, `--skip-install` (skip cross-platform `bun install`).
+- Output goes to `packages/opencode/dist/opencode-<platform>/bin/opencode` (e.g. `opencode-darwin-arm64`).
+- The build script generates model provider data, compiles the web UI from `packages/app`, then uses `Bun.build()` with compile flag to produce the standalone binary.
+
 ## Type Checking
 
 - Always run `bun typecheck` from package directories (e.g., `packages/opencode`), never `tsc` directly.
