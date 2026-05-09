@@ -178,6 +178,20 @@ The plan is designed primarily for international users, with models hosted in th
 
 ---
 
+### Adapter compatibility
+
+Go models use three different AI SDK adapters depending on the endpoint:
+
+| Adapter | Endpoint | Models |
+| ------- | -------- | ------ |
+| `@ai-sdk/openai-compatible` | `/v1/chat/completions` | GLM-5.1, GLM-5, Kimi K2.5, Kimi K2.6, DeepSeek V4 Pro, DeepSeek V4 Flash, MiMo-V2.5, MiMo-V2.5-Pro |
+| `@ai-sdk/anthropic` | `/v1/messages` | MiniMax M2.7, MiniMax M2.5 |
+| `@ai-sdk/alibaba` | `/v1/chat/completions` | Qwen3.6 Plus, Qwen3.5 Plus |
+
+All three adapters are OpenAI API-compatible at the protocol level — they follow the standard REST contract (JSON request/response, streaming via SSE). The difference is in which **AI SDK package** is used to call them, affecting request/response handling (headers, body shaping, auth) per provider.
+
+---
+
 ## Goals
 
 We created OpenCode Go to:

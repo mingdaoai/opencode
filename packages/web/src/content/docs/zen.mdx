@@ -292,6 +292,21 @@ and you want to use that instead of the one that Zen provides.
 
 ---
 
+### Adapter compatibility
+
+Zen models use four different AI SDK adapters depending on the endpoint:
+
+| Adapter | Endpoint | Models |
+| ------- | -------- | ------ |
+| `@ai-sdk/openai` | `/v1/responses` | All GPT 5.x models |
+| `@ai-sdk/anthropic` | `/v1/messages` | All Claude models |
+| `@ai-sdk/google` | `/v1/models/{model}` | Gemini 3.1 Pro, Gemini 3 Flash |
+| `@ai-sdk/openai-compatible` | `/v1/chat/completions` | Qwen3.6+, Qwen3.5+, MiniMax M2.7, MiniMax M2.5, MiniMax M2.5 Free, GLM 5.1, GLM 5, Kimi K2.5, Kimi K2.6, Big Pickle, Ling 2.6 Flash, Hy3 Preview Free, Nemotron 3 Super Free |
+
+All four adapters are OpenAI API-compatible at the protocol level — they all follow the standard REST contract (JSON request/response, streaming via SSE, etc.). The difference is in which **AI SDK package** OpenCode uses to call them, which determines how request/response details (headers, body shaping, auth) are handled per provider.
+
+---
+
 ## Goals
 
 We created OpenCode Zen to:

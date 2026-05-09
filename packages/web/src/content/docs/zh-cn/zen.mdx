@@ -274,6 +274,21 @@ Admin 可以为工作区启用或禁用特定模型。向已禁用模型发出�
 
 ---
 
+### 适配器兼容性
+
+Zen 模型根据端点使用四种不同的 AI SDK 适配器：
+
+| 适配器 | 端点 | 模型 |
+| ------ | ---- | ---- |
+| `@ai-sdk/openai` | `/v1/responses` | 所有 GPT 5.x 模型 |
+| `@ai-sdk/anthropic` | `/v1/messages` | 所有 Claude 模型 |
+| `@ai-sdk/google` | `/v1/models/{model}` | Gemini 3.1 Pro, Gemini 3 Flash |
+| `@ai-sdk/openai-compatible` | `/v1/chat/completions` | Qwen3.6+、Qwen3.5+、MiniMax M2.7、MiniMax M2.5、MiniMax M2.5 Free、GLM 5.1、GLM 5、Kimi K2.5、Kimi K2.6、Big Pickle、Ling 2.6 Flash、Hy3 Preview Free、Nemotron 3 Super Free |
+
+四种适配器在协议层面均为 OpenAI API 兼容 — 均遵循标准 REST 契约（JSON 请求/响应、SSE 流式传输等）。区别在于使用的 **AI SDK 包**，这决定了各提供商请求/响应的处理方式（header、body 构造、认证等）。
+
+---
+
 ## 目标
 
 我们创建 OpenCode Zen，是为了：

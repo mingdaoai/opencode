@@ -164,6 +164,20 @@ https://opencode.ai/zen/go/v1/models
 
 ---
 
+### 轉接器相容性
+
+Go 模型根據端點使用三種不同的 AI SDK 轉接器：
+
+| 轉接器 | 端點 | 模型 |
+| ------ | ---- | ---- |
+| `@ai-sdk/openai-compatible` | `/v1/chat/completions` | GLM-5.1、GLM-5、Kimi K2.5、Kimi K2.6、DeepSeek V4 Pro、DeepSeek V4 Flash、MiMo-V2.5、MiMo-V2.5-Pro |
+| `@ai-sdk/anthropic` | `/v1/messages` | MiniMax M2.7、MiniMax M2.5 |
+| `@ai-sdk/alibaba` | `/v1/chat/completions` | Qwen3.6 Plus、Qwen3.5 Plus |
+
+三種轉接器在協議層面均為 OpenAI API 相容 — 遵循標準 REST 契約（JSON 請求/回應、SSE 流式傳輸）。區別在於使用的 **AI SDK 套件**，影響各供應商請求/回應的處理方式（header、body 構造、認證等）。
+
+---
+
 ## 目標
 
 我們建立 OpenCode Go 的目的是：

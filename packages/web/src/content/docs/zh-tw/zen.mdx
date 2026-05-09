@@ -281,6 +281,21 @@ Admin 可以為工作區啟用或停用特定模型。對已停用模型發出�
 
 ---
 
+### 轉接器相容性
+
+Zen 模型根據端點使用四種不同的 AI SDK 轉接器：
+
+| 轉接器 | 端點 | 模型 |
+| ------ | ---- | ---- |
+| `@ai-sdk/openai` | `/v1/responses` | 所有 GPT 5.x 模型 |
+| `@ai-sdk/anthropic` | `/v1/messages` | 所有 Claude 模型 |
+| `@ai-sdk/google` | `/v1/models/{model}` | Gemini 3.1 Pro, Gemini 3 Flash |
+| `@ai-sdk/openai-compatible` | `/v1/chat/completions` | Qwen3.6+、Qwen3.5+、MiniMax M2.7、MiniMax M2.5、MiniMax M2.5 Free、GLM 5.1、GLM 5、Kimi K2.5、Kimi K2.6、Big Pickle、Ling 2.6 Flash、Hy3 Preview Free、Nemotron 3 Super Free |
+
+四種轉接器在協議層面均為 OpenAI API 相容 — 均遵循標準 REST 契約（JSON 請求/回應、SSE 流式傳輸等）。區別在於使用的 **AI SDK 套件**，這決定了各供應商請求/回應的處理方式（header、body 構造、認證等）。
+
+---
+
 ## 目標
 
 我們建立 OpenCode Zen，是為了：
